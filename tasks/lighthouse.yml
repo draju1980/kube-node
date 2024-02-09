@@ -1,0 +1,122 @@
+---
+- name: Check if password file exists
+  ansible.builtin.stat:
+    path: /root/lighthouse_password.txt
+  register: lighthouse_password
+
+- name: Copy random genrated password to password.pass file in /root/lighthouse_password.pass
+  when: lighthouse_password.stat.exists == False
+  ansible.builtin.template:
+    src: ../templates/password.txt.j2
+    dest: /root/lighthouse_password.pass
+
+- name: Create consensus system user and group
+  become: true
+  user:
+    name: consensus
+    system: yes
+    group: consensus
+    create_home: no
+
+- name: Create directory for Lighthouse data
+  become: true
+  file:
+    path: /var/lib/lighthouse
+    state: directory
+    owner: consensus
+    group: consensus
+    mode: '0755'
+
+- name: Get latest release URL
+  ansible.builtin.shell: curl -s "https://api.github.com/repos/sigp/lighthouse/releases/latest" | jq -r '.assets[] | select(.name) | .browser_download_url' | grep x86_64-unknown-linux-gnu.tar.gz$
+  register: release_url
+
+- name: Download Lighthouse binary
+  get_url:
+    url: "{{ release_url.stdout }}"
+    dest: "{{ ansible_env.HOME }}/lighthouse.tar.gz"
+
+- name: Extract Lighthouse binary
+  ansible.builtin.unarchive:
+    src: "{{ ansible_env.HOME }}/lighthouse.tar.gz"
+    dest: /usr/local/bin/
+    remote_src: yes
+    extra_opts: "--strip-components=1"
+
+- name: Remove downloaded tarball
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/lighthouse.tar.gz"
+    state: absent
+
+- name: Create lighthouse consensus layer client systemd service file
+  become: true
+  copy:
+    content: |
+      [Unit]
+      Description=Lighthouse Consensus Layer Client service for Mainnet
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=simple
+      User=consensus
+      Group=consensus
+      Restart=on-failure
+      RestartSec=3
+      KillSignal=SIGINT
+      TimeoutStopSec=900
+      ExecStart=/usr/local/bin/lighthouse bn \
+        --datadir /var/lib/lighthouse \
+        --network sepolia \
+        --http \
+        --checkpoint-sync-url=https://sepolia.beaconstate.info \
+        --port 9000 \
+        --execution-endpoint http://127.0.0.1:8551 \
+        --execution-jwt /root/jwt.hex 
+        
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/lighthouse.service
+  notify: Reload systemd
+
+- name: Start and enable the Lighthouse service
+  become: true
+  systemd:
+    name: lighthouse
+    state: started
+    enabled: yes
+
+- name: Reload systemd daemon
+  become: true
+  systemd:
+    daemon_reload: yes
+
+- name: Enable consensus service
+  become: true
+  systemd:
+    name: consensus
+    enabled: yes
+
+# lighthouse --network sepolia account wallet create --name cube --password-file /root/lighthouse_password.pass
+# lighthouse --network sepolia account wallet import --name wally --key-file wally.key --password-file wally.pass
+
+# - name: Check if the file exists
+#   ansible.builtin.stat:
+#     path: "{{ datadir }}/{{ lighthouse_node_name }}/config/aditional_wallet.txt"
+#   register: wallet_file_stat
+
+# - name: Create additional lighthous wallet
+#   when: wallet_file_stat.stat.exists == False
+#   docker_container:
+#     name: additional_lighthous_wallet
+#     image: sigp/lighthouse:latest-modern
+#     command: account new --password /root/.lighthouse/config/password.txt
+#     volumes:
+#       - "{{ datadir }}/{{ lighthouse_node_name }}/config:/root/.lighthouse/config"
+#     register: additional_wallet
+
+# - name: Copy aditional_wallet details to a file
+#   when: additional_wallet.changed
+#   ansible.builtin.copy:
+#     content: "{{ aditional_wallet.stdout }}"
+#     dest: "{{ datadir }}/{{ lighthouse_node_name }}/config/aditional_wallet.txt"

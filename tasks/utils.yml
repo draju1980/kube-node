@@ -1,0 +1,17 @@
+---
+- name: Generate random hex string for jwtsecret and save to file
+  ansible.builtin.shell: openssl rand -hex 32 | tr -d '\n' | tee /root/jwt.hex
+  become: true
+
+
+- name: Install Docker dependencies
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - chrony
+    - curl
+    - jp
+    - ccze
+    

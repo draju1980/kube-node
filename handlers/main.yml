@@ -1,0 +1,21 @@
+---
+# handlers for restart geth
+- name: Restart geth
+  become: true
+  systemd:
+    name: geth
+    state: restarted
+
+# handlers for restart lightouse
+- name: Restart lightouse
+  become: true
+  systemd:
+    name: consensus
+    state: restarted
+
+# handlers for restart HAProxy
+- name: Restart HAProxy
+  become: true
+  systemd:
+    name: haproxy
+    state: restarted

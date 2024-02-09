@@ -1,0 +1,21 @@
+---
+# defaults var file for ethnodes
+
+# Testnet network details
+network_name: sepolia
+nettwork_id: "11155111"
+
+# Random password for the geth and lighthouse nodes
+random_password: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters') }}"
+
+# Geth ports
+geth_rpc_port: 8545
+geth_wss_port: 8546
+geth_p2p_udp_port: 30304
+geth_p2p_tcp_port: 30303
+
+# Lighthouse ports
+lighthouse_rpc_port: 5052
+lighthouse_wss_port: 5053
+lighthouse_beacon_port: 8551
+lighthouse_p2p_port: 9000

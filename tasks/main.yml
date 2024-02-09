@@ -1,0 +1,28 @@
+---
+- name: Install eth client locally on node along with HA-Proxy
+  hosts: all
+  tasks:
+    # importing the variables
+    - name: Include defaults variables
+      ansible.builtin.include_vars:
+        file: ../defaults/main.yml
+
+    # importing the firewall installation task
+    - import_tasks: firewall.yml
+      tags: firewall
+
+    # importing the pre installation task
+    - import_tasks: utils.yml
+      tags: utils
+
+    # importing the geth installation task
+    - import_tasks: geth.yml
+      tags: geth
+
+    # importing the lighthouse installation task
+    - import_tasks: lighthouse.yml
+      tags: lighthouse
+
+    # importing the haproxy installation task
+    - import_tasks: haproxy.yml
+      tags: haproxy

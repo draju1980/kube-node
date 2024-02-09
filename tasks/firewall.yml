@@ -1,0 +1,35 @@
+---
+- name: Enable UFW (Uncomplicated Firewall)
+  ansible.builtin.command: ufw --force enable
+
+- name: Allow TCP traffic on ports 30303, 30304 and 9000
+  ufw:
+    rule: allow
+    proto: tcp
+    port: "{{ item }}"
+  loop:
+    - 30303
+    - 30304
+    - 9000
+    - 443
+    - 80
+    - 22
+
+- name: Allow UDP traffic on ports 30303, 30304 and 9000
+  ufw:
+    rule: allow
+    proto: udp
+    port: "{{ item }}"
+  loop:
+    - 30303
+    - 30304
+    - 9000
+    - 443
+    - 80
+    - 22
+
+- name: Reload UFW
+  shell: ufw reload
+
+- name: Enable UFW on boot
+  shell: ufw --force enable

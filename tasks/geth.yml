@@ -1,0 +1,73 @@
+---
+- name: Add Ethereum PPA repository
+  apt_repository:
+    repo: "ppa:ethereum/ethereum"
+    state: present
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Geth on ubuntu
+  apt:
+    name: ethereum
+    state: present
+# abigen, bootnode, clef, evm, geth, puppeth, rlpdump, and wnode commands will be available on /usr/bin/
+
+- name: Check if password file exists
+  ansible.builtin.stat:
+    path: /root/geth_password.txt
+  register: geth_password
+
+- name: Copy random genrated password to password.txt file in geth config directory
+  when: geth_password.stat.exists == False
+  ansible.builtin.template:
+    src: ../templates/password.txt.j2
+    dest: /root/geth_password.txt
+
+- name: Create systemd service file for Geth
+  become: true
+  copy:
+    content: |
+      [Unit]
+      Description=Ethereum Geth Node
+      After=network.target
+
+      [Service]
+      ExecStart=/usr/bin/geth --sepolia --http --authrpc.addr localhost --authrpc.port 8551 --authrpc.vhosts localhost --authrpc.jwtsecret /root/jwt.hex --http.api eth,net
+      Restart=always
+
+      [Install]
+      WantedBy=default.target
+    dest: /etc/systemd/system/geth.service
+  notify: Reload systemd
+
+- name: Start and enable the geth service
+  become: true
+  systemd:
+    name: geth
+    state: started
+    enabled: yes
+
+
+# - name: Create additional geth wallet
+#   when: wallet_file_stat.stat.exists == False
+#   ansible.builtin.docker_container:
+#     name: additional_geth_wallet
+#     image: ethereum/client-go:latest
+#     command: account new --password /root/.ethereum/config/password.txt
+#     volumes:
+#       - "{{ app_data_path }}/{{ geth_node_name }}/config:/root/.ethereum/config"
+#     networks:
+#       - name: "{{ docker_network_name }}"
+#     ports:
+#       - "127.0.0.1:{{ geth_rpc_port }}:{{ geth_rpc_port }}"
+#       - "127.0.0.1:{{ geth_wss_port }}:{{ geth_wss_port }}"
+#       - "0.0.0.0:{{ geth_p2p_udp_port }}:{{ geth_p2p_udp_port }}"
+#       - "0.0.0.0:{{ geth_p2p_tcp_port }}:{{ geth_p2p_tcp_port }}"
+
+# - name: Copy aditional_wallet details to a file
+#   when: additional_wallet.changed
+#   ansible.builtin.copy:
+#     content: "{{ aditional_wallet.stdout }}"
+#     dest: "{{ app_data_path }}/{{ geth_node_name }}/config/aditional_wallet.txt"
