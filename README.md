@@ -1,12 +1,7 @@
-Application Design
-=========
-![image](https://github.com/draju1980/ethnodes/assets/28708694/6a23bfc3-aee7-4061-a950-5140eca038a2)
-
-
 Role Name
 =========
 
-This role is designed to set up Geth and Lighthouse clients within Docker containers, along with additional wallets. Leveraging HAProxy, all RPC requests will be intelligently routed to both Ethereum clients using a round-robin traffic strategy.
+This role is designed to deploy and set up Geth and Lighthouse clients on Linux distributions like Debian and Ubuntu, along with additional wallets. Leveraging HAProxy, all RPC requests will be intelligently routed to both Ethereum clients using a round-robin traffic strategy.
 
 Requirements
 ------------
@@ -16,7 +11,7 @@ This role is specifically developed for Linux distributions like Debian and Ubun
 Role Variables
 --------------
 
-This role incorporates variables defined in both defaults/main.yml and vars/testnet.yml.
+This role incorporates variables defined in both defaults/main.yml.
 
 How to Use this role
 ==============
