@@ -1,5 +1,5 @@
 ---
-- name: Install eth client locally on node along with HA-Proxy
+- name: Installing eth clients along with HA-Proxy
   hosts: all
   tasks:
     # importing the variables
@@ -8,8 +8,8 @@
         file: ../defaults/main.yml
 
     # importing the firewall installation task
-    - import_tasks: firewall.yml
-      tags: firewall
+    # - import_tasks: firewall.yml
+    #   tags: firewall
 
     # importing the pre installation task
     - import_tasks: utils.yml

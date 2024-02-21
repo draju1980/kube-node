@@ -1,4 +1,14 @@
 ---
+- name: Install ufw package
+  become: true
+  ansible.builtin.package:
+    name: ufw
+    state: present
+
+- name: Enable firewall using ufw
+  become: true
+  ansible.builtin.command: ufw --force enable
+
 - name: Enable UFW (Uncomplicated Firewall)
   ansible.builtin.command: ufw --force enable
 
@@ -11,7 +21,7 @@
     - 30303
     - 30304
     - 9000
-    - 443
+    - 8080
     - 80
     - 22
 
@@ -24,12 +34,13 @@
     - 30303
     - 30304
     - 9000
-    - 443
+    - 8080
     - 80
     - 22
 
 - name: Reload UFW
   shell: ufw reload
 
-- name: Enable UFW on boot
-  shell: ufw --force enable
+- name: Enable firewall using ufw
+  become: true
+  ansible.builtin.command: ufw --force enable

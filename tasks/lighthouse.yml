@@ -10,13 +10,17 @@
     src: ../templates/password.txt.j2
     dest: /root/lighthouse_password.pass
 
-- name: Create consensus system user and group
-  become: true
-  user:
+- name: Create consensus system group
+  ansible.builtin.group:
     name: consensus
     system: yes
+
+- name: Create consensus system user without home directory
+  ansible.builtin.user:
+    name: consensus
     group: consensus
-    create_home: no
+    system: yes
+    createhome: no
 
 - name: Create directory for Lighthouse data
   become: true
@@ -27,57 +31,40 @@
     group: consensus
     mode: '0755'
 
-- name: Get latest release URL
-  ansible.builtin.shell: curl -s "https://api.github.com/repos/sigp/lighthouse/releases/latest" | jq -r '.assets[] | select(.name) | .browser_download_url' | grep x86_64-unknown-linux-gnu.tar.gz$
-  register: release_url
-
 - name: Download Lighthouse binary
-  get_url:
-    url: "{{ release_url.stdout }}"
-    dest: "{{ ansible_env.HOME }}/lighthouse.tar.gz"
+  ansible.builtin.get_url:
+    url: "https://github.com/sigp/lighthouse/releases/download/v4.5.0/lighthouse-v4.5.0-x86_64-unknown-linux-gnu-portable.tar.gz"
+    dest: "{{ ansible_env.HOME }}/lighthouse-v4.5.0-x86_64-unknown-linux-gnu-portable.tar.gz"
 
 - name: Extract Lighthouse binary
-  ansible.builtin.unarchive:
-    src: "{{ ansible_env.HOME }}/lighthouse.tar.gz"
-    dest: /usr/local/bin/
-    remote_src: yes
-    extra_opts: "--strip-components=1"
+  ansible.builtin.shell:
+    cmd: "tar -xvf {{ ansible_env.HOME }}/lighthouse-v4.5.0-x86_64-unknown-linux-gnu-portable.tar.gz"
+    chdir: "{{ ansible_env.HOME }}"
+  become: true
 
-- name: Remove downloaded tarball
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/lighthouse.tar.gz"
-    state: absent
+- name: Copy Lighthouse binary to /usr/bin
+  ansible.builtin.copy:
+    src: "{{ ansible_env.HOME }}/lighthouse"
+    dest: /usr/bin/lighthouse
+    mode: '0755'
+  become: true
 
 - name: Create lighthouse consensus layer client systemd service file
   become: true
   copy:
     content: |
       [Unit]
-      Description=Lighthouse Consensus Layer Client service for Mainnet
-      Wants=network-online.target
-      After=network-online.target
+      Description=Lighthouse Consensus node for sepolia network
+      After=network.target
 
       [Service]
-      Type=simple
-      User=consensus
-      Group=consensus
-      Restart=on-failure
-      RestartSec=3
-      KillSignal=SIGINT
-      TimeoutStopSec=900
-      ExecStart=/usr/local/bin/lighthouse bn \
-        --datadir /var/lib/lighthouse \
-        --network sepolia \
-        --http \
-        --checkpoint-sync-url=https://sepolia.beaconstate.info \
-        --port 9000 \
-        --execution-endpoint http://127.0.0.1:8551 \
-        --execution-jwt /root/jwt.hex 
-        
+      ExecStart=/usr/bin/lighthouse beacon_node --datadir /var/lib/lighthouse --network sepolia --checkpoint-sync-url https://sepolia.beaconstate.info --port 9000 --execution-endpoint http://127.0.0.1:8551 --execution-jwt /root/jwt.hex --http --http-port 5052 --http-address 0.0.0.0 --disable-deposit-contract-sync --disable-upnp
+      Restart=always 
+
       [Install]
       WantedBy=multi-user.target
     dest: /etc/systemd/system/lighthouse.service
-  notify: Reload systemd
+  # notify: restart lighthouse
 
 - name: Start and enable the Lighthouse service
   become: true
@@ -91,10 +78,10 @@
   systemd:
     daemon_reload: yes
 
-- name: Enable consensus service
+- name: Enable lighthouse service
   become: true
   systemd:
-    name: consensus
+    name: lighthouse
     enabled: yes
 
 # lighthouse --network sepolia account wallet create --name cube --password-file /root/lighthouse_password.pass

@@ -30,17 +30,18 @@
   copy:
     content: |
       [Unit]
-      Description=Ethereum Geth Node
+      Description=Geth execution node for sepolia network
       After=network.target
 
       [Service]
-      ExecStart=/usr/bin/geth --sepolia --http --authrpc.addr localhost --authrpc.port 8551 --authrpc.vhosts localhost --authrpc.jwtsecret /root/jwt.hex --http.api eth,net
+      ExecStart=/usr/bin/geth --sepolia --datadir /var/lib/geth --authrpc.addr localhost --authrpc.port 8551 --authrpc.vhosts localhost --authrpc.jwtsecret /root/jwt.hex --http --http.port 8545 --http.addr localhost  --http.vhosts localhost  --http.api=eth,net,web3
+
       Restart=always
 
       [Install]
       WantedBy=default.target
     dest: /etc/systemd/system/geth.service
-  notify: Reload systemd
+  # notify: restart geth
 
 - name: Start and enable the geth service
   become: true

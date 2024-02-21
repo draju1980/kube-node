@@ -4,7 +4,7 @@
   become: true
 
 
-- name: Install Docker dependencies
+- name: Install dependencies
   become: true
   apt:
     name: "{{ item }}"
@@ -14,4 +14,13 @@
     - curl
     - jp
     - ccze
-    
+
+- name: Copy blockchain management scripts to the localhost
+  ansible.builtin.copy:
+    src: ../files/chain
+    dest: /usr/sbin/chain
+    owner: root
+    group: root
+    mode: "a+x"
+  tags: chain
+  become: true

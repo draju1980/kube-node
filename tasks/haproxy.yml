@@ -6,9 +6,10 @@
     state: present
 
 - name: Copy HAProxy Configuration File
+  become: true
   ansible.builtin.template:
     src: ../templates/haproxy.cfg.j2
     dest: "/etc/haproxy/haproxy.cfg"
   register: haproxy_config
-  become: true
+  # notify: Restart HAProxy
 

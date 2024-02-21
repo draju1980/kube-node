@@ -38,13 +38,13 @@ sudo apt install ansible git -y
 4.	Clone Repository:
 Clone the repository locally:
 ```
-git clone https://github.com/draju1980/eth-HA.git
+git clone https://github.com/draju1980/kube-node.git
 ```
 
 5.	Change Directory:
 Change to the eth-HA directory:
 ```
-cd eth-HA
+cd kube-node
 ```
 
 6.	Run Ansible Playbook:

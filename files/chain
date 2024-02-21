@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Script to manage services ( geth lighthouse haproxy ) on a node
+
+# Function to start all services
+start_containers() {
+    echo "Starting all services..."
+    sudo systemctl start geth
+    sudo systemctl start lighthouse
+    sudo systemctl start haproxy
+}
+
+# Function to stop all services
+stop_containers() {
+    echo "Stopping all services..."
+    sudo systemctl stop haproxy
+    sudo systemctl stop lighthouse
+    sudo systemctl stop geth
+}
+
+# Function to restart all services
+restart_containers() {
+    echo "Restarting all services..."
+    sudo systemctl restart geth
+    sudo systemctl restart lighthouse
+    sudo systemctl restart haproxy
+    echo "Restart completed! Please wait for a few seconds to check the status of the services"
+}
+
+# Function to reset chain by deleteing all geth and lighthouse data
+reset() {
+    echo "Stopping all services..."
+    sudo systemctl stop haproxy
+    sudo systemctl stop lighthouse
+    sudo systemctl stop geth
+    sudo rm -rf /var/lib/geth/*
+    sudo rm -rf /var/lib/lighthouse/*
+    echo "Starting all services..."
+    sudo systemctl start geth
+    sudo systemctl start lighthouse
+    sudo systemctl start haproxy
+    echo "Reset has been completed! Please wait for a few seconds to check the status of the services"
+}
+
+# Check the command-line argument
+case "$1" in
+    start)
+        start_containers
+        ;;
+    stop)
+        stop_containers
+        ;;
+    restart)
+        restart_containers
+        ;;
+    reset)
+        reset
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|reset}"
+        exit 1
+        ;;
+esac
+
+exit 0
